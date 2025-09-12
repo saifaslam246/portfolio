@@ -39,6 +39,25 @@ const UpworkIcon = ({ size = 20, className = "" }) => (
   </div>
 )
 
+// Small inline SR logo for UI usage
+const SRLogoMark = ({ size = 24 }) => (
+  <span
+    aria-hidden
+    className="inline-flex items-center justify-center rounded-full"
+    style={{
+      width: size,
+      height: size,
+      background: 'linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%)',
+      color: '#fff',
+      fontWeight: 800,
+      fontSize: size * 0.45 + 'px',
+      lineHeight: 1
+    }}
+  >
+    SR
+  </span>
+)
+
 // Gather all images from assets (Vite)
 const ASSET_IMAGES = import.meta.glob('/src/assets/**/*.{png,jpg,jpeg,webp,gif}', { eager: true, as: 'url' })
 const ASSET_VIDEOS = import.meta.glob('/src/assets/**/*.{mp4,webm,mov}', { eager: true, as: 'url' })
@@ -172,11 +191,10 @@ function App() {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="text-xl sm:text-2xl font-bold text-white"
+              className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2"
             >
-              <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                Saif Rehman
-              </span>
+              <SRLogoMark size={22} />
+              <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Saif Rehman</span>
             </motion.div>
 
             {/* Desktop Navigation */}
@@ -449,7 +467,7 @@ function App() {
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {[
-              { number: "50+", label: "Projects Completed", icon: FaCheckCircle, color: "from-green-400 to-emerald-400" },
+              { number: "20+", label: "Projects Completed", icon: FaCheckCircle, color: "from-green-400 to-emerald-400" },
               { number: "3+", label: "Years Experience", icon: FaClock, color: "from-blue-400 to-cyan-400" },
               { number: "100%", label: "Client Satisfaction", icon: FaHeart, color: "from-pink-400 to-rose-400" },
               { number: "24/7", label: "Support Available", icon: FaUsers, color: "from-purple-400 to-indigo-400" }
@@ -637,9 +655,9 @@ function App() {
               </h3>
               <div className="space-y-3">
                 {[
-                  "Best Developer Award 2023",
-                  "100+ Happy Clients",
-                  "50+ Successful Projects",
+                  "UX that moves as fast as your ideas.",
+                  "10+ Happy Clients",
+                  "20+ Successful Projects",
                   "3+ Years of Excellence"
                 ].map((achievement, index) => (
                   <motion.div
@@ -906,7 +924,8 @@ function App() {
                   y: -15,
                   rotateY: 10
                 }}
-                className="group relative rounded-2xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300 transform hover:scale-105"
+                whileTap={{ scale: 0.99 }}
+                className="group relative rounded-2xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors duration-300"
               >
                 <div className="h-40 sm:h-48 md:h-52 lg:h-56 relative overflow-hidden">
                   <img src={getMainImageForProject(project)} alt={project.title} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300" onError={(e)=>{e.currentTarget.src='/vite.svg'}} />
@@ -948,12 +967,12 @@ function App() {
           {/* Project Details Modal */}
           <AnimatePresence>
             {selectedProject && (
-              <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+              <motion.div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <motion.div className="max-w-4xl w-full rounded-2xl bg-slate-900 border border-white/10 overflow-hidden"
+                <motion.div className="w-full max-w-5xl rounded-2xl bg-slate-900 border border-white/10 overflow-hidden flex flex-col max-h-[90vh]"
                   initial={{ scale: 0.9, y: 20, opacity: 0 }}
                   animate={{ scale: 1, y: 0, opacity: 1 }}
                   exit={{ scale: 0.95, opacity: 0 }}
@@ -967,31 +986,35 @@ function App() {
                     const isActiveVideo = videos.includes(active)
                     return (
                       <>
-                        <div className="relative bg-black/20">
+                        <div className="relative bg-black/20 flex-shrink-0">
+                          <button onClick={closeProjectDetails} aria-label="Close modal" className="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 rounded-full bg-slate-900/80 backdrop-blur border border-white/10 text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-400 z-10">
+                            <HiX size={18} />
+                          </button>
                           {isActiveVideo ? (
-                            <video src={active} className="w-full max-h-[60vh] bg-slate-900" controls playsInline />
+                            <video src={active} className="w-full h-auto max-h-[45vh] sm:max-h-[55vh] bg-slate-900" controls playsInline />
                           ) : (
-                            <img src={active} alt={selectedProject.title} className="w-full max-h-[60vh] object-contain bg-slate-900" />
+                            <img src={active} alt={selectedProject.title} className="w-full h-auto max-h-[45vh] sm:max-h-[55vh] object-contain bg-slate-900" />
                           )}
-                          <button onClick={closeProjectDetails} className="absolute top-3 right-3 px-3 py-1 rounded-lg bg-black/50 text-white text-sm border border-white/10 hover:bg-black/70">Close</button>
                         </div>
                         {media.length > 1 && (
-                          <div className="p-4 grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-2 bg-slate-950/40 border-b border-white/10">
-                            {media.map((src, idx) => {
-                              const isVideo = videos.includes(src)
-                              return (
-                                <button key={idx} onClick={() => setActiveGalleryIndex(idx)} className={`relative rounded-lg overflow-hidden border ${idx === activeGalleryIndex ? 'border-purple-400' : 'border-white/10'}`}>
-                                  {isVideo ? (
-                                    <div className="w-full h-16 bg-black/60 flex items-center justify-center text-white text-[10px]">Video</div>
-                                  ) : (
-                                    <img src={src} alt={`thumb-${idx}`} className="w-full h-16 object-cover" />
-                                  )}
-                                </button>
-                              )
-                            })}
+                          <div className="bg-slate-950/40 border-b border-white/10 overflow-x-auto">
+                            <div className="p-3 flex items-center gap-2 min-w-max">
+                              {media.map((src, idx) => {
+                                const isVideo = videos.includes(src)
+                                return (
+                                  <button key={idx} onClick={() => setActiveGalleryIndex(idx)} className={`relative rounded-lg overflow-hidden border ${idx === activeGalleryIndex ? 'border-purple-400' : 'border-white/10'}`}>
+                                    {isVideo ? (
+                                      <div className="w-20 h-14 sm:w-24 sm:h-16 bg-black/60 flex items-center justify-center text-white text-[10px]">Video</div>
+                                    ) : (
+                                      <img src={src} alt={`thumb-${idx}`} className="w-20 h-14 sm:w-24 sm:h-16 object-cover" />
+                                    )}
+                                  </button>
+                                )
+                              })}
+                            </div>
                           </div>
                         )}
-                        <div className="p-5 sm:p-6">
+                        <div className="p-4 sm:p-6 overflow-y-auto">
                           <h3 className="text-xl sm:text-2xl font-semibold text-white mb-3">{selectedProject.title}</h3>
                           <p className="text-gray-300 mb-5 leading-relaxed whitespace-pre-line">{selectedProject.description}</p>
                           <div className="flex flex-wrap gap-2">
