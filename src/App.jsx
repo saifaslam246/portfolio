@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import emailjs from '@emailjs/browser'
 import { 
   FaGithub, 
   FaLinkedin, 
@@ -89,6 +90,18 @@ function App() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [selectedProject, setSelectedProject] = useState(null)
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0)
+  
+  // Contact form state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState(null) // 'success', 'error', or null
+  const [countdown, setCountdown] = useState(0)
+  const [errors, setErrors] = useState({})
+  const [touched, setTouched] = useState({})
 
   const openProjectDetails = (project) => { setActiveGalleryIndex(0); setSelectedProject(project) }
   const closeProjectDetails = () => setSelectedProject(null)
@@ -124,6 +137,25 @@ function App() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Auto-dismiss success message after 5 seconds with countdown
+  useEffect(() => {
+    if (submitStatus === 'success') {
+      setCountdown(5)
+      
+      const countdownInterval = setInterval(() => {
+        setCountdown(prev => {
+          if (prev <= 1) {
+            setSubmitStatus(null)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+      return () => clearInterval(countdownInterval)
+    }
+  }, [submitStatus])
+
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId)
     if (element) {
@@ -132,45 +164,166 @@ function App() {
     setIsMenuOpen(false)
   }
 
-  // Generate floating particles
-  const particles = Array.from({ length: 20 }, (_, i) => ({
+  // Validation functions
+  const validateField = (name, value) => {
+    let error = ''
+    
+    switch (name) {
+      case 'name':
+        if (!value.trim()) {
+          error = 'Name is required'
+        } else if (value.trim().length < 2) {
+          error = 'Name must be at least 2 characters'
+        }
+        break
+      case 'email':
+        if (!value.trim()) {
+          error = 'Email is required'
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          error = 'Please enter a valid email address'
+        }
+        break
+      case 'message':
+        if (!value.trim()) {
+          error = 'Message is required'
+        } else if (value.trim().length < 10) {
+          error = 'Message must be at least 10 characters'
+        }
+        break
+      default:
+        break
+    }
+    
+    return error
+  }
+
+  const validateForm = () => {
+    const newErrors = {}
+    let isValid = true
+
+    Object.keys(formData).forEach(field => {
+      const error = validateField(field, formData[field])
+      if (error) {
+        newErrors[field] = error
+        isValid = false
+      }
+    })
+
+    setErrors(newErrors)
+    return isValid
+  }
+
+  // Contact form handlers
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }))
+    }
+  }
+
+  const handleInputBlur = (e) => {
+    const { name, value } = e.target
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }))
+
+    // Only show errors on blur if form has been submitted before
+    if (submitStatus === 'error' || Object.keys(touched).length > 0) {
+      const error = validateField(name, value)
+      setErrors(prev => ({
+        ...prev,
+        [name]: error
+      }))
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setSubmitStatus(null)
+
+    // Mark all fields as touched
+    setTouched({
+      name: true,
+      email: true,
+      message: true
+    })
+
+    // Validate form
+    if (!validateForm()) {
+      setIsSubmitting(false)
+      return
+    }
+
+    try {
+      // Initialize EmailJS with your public key
+      emailjs.init(import.meta.env.VITE_EMAILJS_PUBLIC_KEY)
+      
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        message: formData.message,
+        to_email: import.meta.env.VITE_CONTACT_EMAIL
+      }
+
+      // Send email using EmailJS
+      const result = await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID, // Your service ID
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID, // Your template ID
+        templateParams
+      )
+
+      if (result.status === 200) {
+        setSubmitStatus('success')
+        setFormData({ name: '', email: '', message: '' })
+      } else {
+        setSubmitStatus('error')
+      }
+    } catch (error) {
+      console.error('Error sending email:', error)
+      setSubmitStatus('error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Generate static particles
+  const particles = Array.from({ length: 8 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
-    size: Math.random() * 4 + 2,
-    delay: Math.random() * 5,
-    duration: Math.random() * 10 + 10
+    size: Math.random() * 3 + 1
   }))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
-      {/* Animated Background */}
+      {/* Static Background */}
       <div className="fixed inset-0 opacity-20">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-2000"></div>
-        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse animation-delay-4000"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl"></div>
       </div>
 
-      {/* Floating Particles */}
+      {/* Static Particles */}
       {particles.map((particle) => (
-        <motion.div
+        <div
           key={particle.id}
-          className="absolute w-1 h-1 bg-purple-400 rounded-full opacity-30"
+          className="absolute w-1 h-1 bg-purple-400 rounded-full opacity-20"
           style={{
             left: `${particle.x}%`,
             top: `${particle.y}%`,
             width: `${particle.size}px`,
             height: `${particle.size}px`,
-          }}
-          animate={{
-            y: [0, -100, 0],
-            opacity: [0.3, 0.8, 0.3],
-          }}
-          transition={{
-            duration: particle.duration,
-            delay: particle.delay,
-            repeat: Infinity,
-            ease: "easeInOut"
           }}
         />
       ))}
@@ -268,7 +421,7 @@ function App() {
             >
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-purple-400 text-sm font-medium">
-                  <FaStar className="animate-spin" />
+                  <FaStar />
                   <span>Full Stack Developer</span>
                 </div>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight">
@@ -316,7 +469,7 @@ function App() {
                   className="group relative px-6 sm:px-8 py-3 sm:py-4 border-2 border-purple-400 text-purple-400 font-semibold rounded-xl hover:bg-purple-400 hover:text-white transition-all duration-300 transform hover:scale-105 text-sm sm:text-base overflow-hidden"
                 >
                   <span className="relative z-10 flex items-center justify-center gap-2">
-                    <FaPlay className="animate-pulse" />
+                    <FaPlay />
                     View Projects
                   </span>
                   <div className="absolute inset-0 bg-purple-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
@@ -325,10 +478,10 @@ function App() {
 
               <div className="flex space-x-4 sm:space-x-6">
                 {[
-                  { icon: FaGithub, href: "https://github.com/saifaslam246", label: "GitHub", isExternal: true },
-                  { icon: FaLinkedin, href: "https://www.linkedin.com/in/saif-rehman-432383183/", label: "LinkedIn", isExternal: true },
-                  { icon: FaEnvelope, href: "mailto:saifaslam155@gmail.com", label: "Email", isExternal: false },
-                  { icon: UpworkIcon, href: "https://www.upwork.com/freelancers/~01b2af3f031ecd2a5b", label: "Upwork", isExternal: true }
+                  { icon: FaGithub, href: import.meta.env.VITE_GITHUB_URL, label: "GitHub", isExternal: true },
+                  { icon: FaLinkedin, href: import.meta.env.VITE_LINKEDIN_URL, label: "LinkedIn", isExternal: true },
+                  { icon: FaEnvelope, href: `mailto:${import.meta.env.VITE_CONTACT_EMAIL}`, label: "Email", isExternal: false },
+                  { icon: UpworkIcon, href: import.meta.env.VITE_UPWORK_URL, label: "Upwork", isExternal: true }
                 ].map((social, index) => (
                   <motion.a
                     key={index}
@@ -346,20 +499,9 @@ function App() {
                     whileTap={{ scale: 0.9 }}
                     className="group relative p-2 sm:p-3 text-gray-400 hover:text-white transition-colors duration-300"
                   >
-                    <motion.div
-                      animate={{ 
-                        y: [0, -3, 0],
-                        rotate: [0, 2, -2, 0]
-                      }}
-                      transition={{ 
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: index * 0.2
-                      }}
-                    >
+                    <div>
                       <social.icon size={20} className="sm:w-6 sm:h-6" />
-                    </motion.div>
+                    </div>
                     <motion.div 
                       className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-purple-400 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap"
                       initial={{ scale: 0 }}
@@ -380,78 +522,16 @@ function App() {
             >
               <div className="relative z-10">
                 <div className="w-64 h-64 sm:w-80 sm:h-80 mx-auto relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 rounded-full animate-spin-slow"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 rounded-full"></div>
                   <div className="absolute inset-2 bg-slate-900 rounded-full flex items-center justify-center">
-                    <motion.div 
-                      className="text-white text-4xl sm:text-6xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent"
-                      animate={{ 
-                        scale: [1, 1.05, 1],
-                        rotate: [0, 5, -5, 0]
-                      }}
-                      transition={{ 
-                        duration: 4,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    >
+                    <div className="text-white text-4xl sm:text-6xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
                       SR
-                    </motion.div>
+                    </div>
                   </div>
-                  <motion.div 
-                    className="absolute -top-4 -right-4 w-6 h-6 sm:w-8 sm:h-8 bg-purple-400 rounded-full"
-                    animate={{ 
-                      y: [0, -10, 0],
-                      scale: [1, 1.2, 1],
-                      opacity: [0.7, 1, 0.7]
-                    }}
-                    transition={{ 
-                      duration: 2,
-                      repeat: Infinity,
-                      ease: "easeInOut"
-                    }}
-                  />
-                  <motion.div 
-                    className="absolute -bottom-4 -left-4 w-4 h-4 sm:w-6 sm:h-6 bg-blue-400 rounded-full"
-                    animate={{ 
-                      y: [0, 10, 0],
-                      scale: [1, 1.3, 1],
-                      opacity: [0.7, 1, 0.7]
-                    }}
-                    transition={{ 
-                      duration: 2.5,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: 1
-                    }}
-                  />
-                  <motion.div 
-                    className="absolute top-1/2 -left-8 w-3 h-3 bg-pink-400 rounded-full"
-                    animate={{ 
-                      x: [0, 20, 0],
-                      y: [0, -15, 0],
-                      scale: [1, 1.5, 1]
-                    }}
-                    transition={{ 
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: 0.5
-                    }}
-                  />
-                  <motion.div 
-                    className="absolute top-1/4 -right-6 w-2 h-2 bg-cyan-400 rounded-full"
-                    animate={{ 
-                      x: [0, -15, 0],
-                      y: [0, 20, 0],
-                      scale: [1, 1.8, 1]
-                    }}
-                    transition={{ 
-                      duration: 2.8,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: 1.5
-                    }}
-                  />
+                  <div className="absolute -top-4 -right-4 w-6 h-6 sm:w-8 sm:h-8 bg-purple-400 rounded-full opacity-60"></div>
+                  <div className="absolute -bottom-4 -left-4 w-4 h-4 sm:w-6 sm:h-6 bg-blue-400 rounded-full opacity-60"></div>
+                  <div className="absolute top-1/2 -left-8 w-3 h-3 bg-pink-400 rounded-full opacity-50"></div>
+                  <div className="absolute top-1/4 -right-6 w-2 h-2 bg-cyan-400 rounded-full opacity-50"></div>
                 </div>
               </div>
             </motion.div>
@@ -488,37 +568,13 @@ function App() {
                   className="absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-20 transition-opacity duration-300"
                   style={{ background: `linear-gradient(to right, ${stat.color.split(' ')[1]}, ${stat.color.split(' ')[3]})` }}
                 />
-                <motion.div 
-                  className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2"
-                  animate={{ 
-                    scale: [1, 1.1, 1],
-                    textShadow: ["0 0 0px rgba(139, 92, 246, 0)", "0 0 20px rgba(139, 92, 246, 0.5)", "0 0 0px rgba(139, 92, 246, 0)"]
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: index * 0.2
-                  }}
-                >
+                <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
                   {stat.number}
-                </motion.div>
+                </div>
                 <div className="text-gray-300 text-xs sm:text-sm mb-2">{stat.label}</div>
                 <div className="mt-2 text-purple-400">
                   <stat.icon size={16} className="sm:w-5 sm:h-5" />
                 </div>
-                <motion.div
-                  className="absolute inset-0 border-2 border-transparent rounded-xl"
-                  animate={{ 
-                    borderColor: ["transparent", "rgba(139, 92, 246, 0.3)", "transparent"]
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: index * 0.4
-                  }}
-                />
               </motion.div>
             ))}
           </div>
@@ -578,64 +634,14 @@ function App() {
                 }}
                 className="group relative p-4 sm:p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 overflow-hidden"
               >
-                <motion.div 
-                  className={`text-center mb-4 p-2 sm:p-3 rounded-xl bg-gradient-to-r ${item.gradient} w-fit mx-auto`}
-                  animate={{ 
-                    scale: [1, 1.1, 1],
-                    rotate: [0, 5, -5, 0]
-                  }}
-                  transition={{ 
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: index * 0.5
-                  }}
-                >
-                  <motion.div 
-                    className="text-white"
-                    animate={{ 
-                      rotate: [0, 360],
-                    }}
-                    transition={{ 
-                      duration: 8,
-                      repeat: Infinity,
-                      ease: "linear",
-                      delay: index * 0.5
-                    }}
-                  >
+                <div className={`text-center mb-4 p-2 sm:p-3 rounded-xl bg-gradient-to-r ${item.gradient} w-fit mx-auto`}>
+                  <div className="text-white">
                     {item.icon}
-                  </motion.div>
-                </motion.div>
+                  </div>
+                </div>
                 <h3 className="text-lg sm:text-xl font-semibold text-white mb-3 text-center">{item.title}</h3>
                 <p className="text-gray-300 text-center leading-relaxed text-sm sm:text-base">{item.description}</p>
-                <motion.div 
-                  className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  animate={{ 
-                    background: [
-                      "linear-gradient(45deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1))",
-                      "linear-gradient(45deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))",
-                      "linear-gradient(45deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1))"
-                    ]
-                  }}
-                  transition={{ 
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: index * 0.3
-                  }}
-                />
-                <motion.div
-                  className="absolute inset-0 border-2 border-transparent rounded-2xl"
-                  animate={{ 
-                    borderColor: ["transparent", "rgba(139, 92, 246, 0.3)", "transparent"]
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: index * 0.7
-                  }}
-                />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-blue-500/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </motion.div>
             ))}
           </div>
@@ -768,27 +774,10 @@ function App() {
                     >
                       <span className="text-gray-300 group-hover:text-white transition-colors text-sm sm:text-base">{skill}</span>
                       <div className="w-16 sm:w-20 h-2 bg-gray-700 rounded-full overflow-hidden relative">
-                        <motion.div 
+                        <div 
                           className={`h-full bg-gradient-to-r ${category.gradient} rounded-full relative`}
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${85 + Math.random() * 15}%` }}
-                          transition={{ duration: 1.5, delay: skillIndex * 0.2 }}
-                          viewport={{ once: true }}
-                        >
-                          <motion.div
-                            className="absolute inset-0 bg-white/20"
-                            animate={{ 
-                              x: ["-100%", "100%"],
-                              opacity: [0, 1, 0]
-                            }}
-                            transition={{ 
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "easeInOut",
-                              delay: skillIndex * 0.3
-                            }}
-                          />
-                        </motion.div>
+                          style={{ width: `${85 + Math.random() * 15}%` }}
+                        />
                       </div>
                     </motion.div>
                   ))}
@@ -907,10 +896,11 @@ function App() {
                 galleryPrefixes: ['ggamer', 'gGamer']
               },
               {
-                title: "Project Tracker",
-                description: "Kanban boards, time logging and client billing summaries.",
-                tech: ["React", "FastAPI", "MySQL"],
-                image: "/project-6.jpg"
+                title: "CorporateMerch.com – AI-Powered Merchandise Platform",
+                description: "CorporateMerch.com is a platform that helps businesses easily design and order branded merchandise like t-shirts, mugs, tech items, and more. It uses AI to create custom designs in seconds, making the process fast and simple. Companies can use it to send gifts to clients, employees, or partners. The site also connects with tools like CRM systems to automate sending gifts. It's great for corporate gifting, event giveaways, or boosting brand awareness. Overall, it makes it easy for any company to manage and send custom swag.",
+                tech: ["Next.js", "Tailwind CSS", "AI Integration", "CRM Systems", "E-commerce"],
+                image: ASSET_IMAGES['/src/assets/corporate_merch/Pasted image.png'] || '/project-6.jpg',
+                galleryPrefix: 'corporate_merch'
               }
             ].map((project, index) => (
               <motion.div
@@ -928,7 +918,7 @@ function App() {
                 className="group relative rounded-2xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors duration-300"
               >
                 <div className="h-40 sm:h-48 md:h-52 lg:h-56 relative overflow-hidden">
-                  <img src={getMainImageForProject(project)} alt={project.title} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300" onError={(e)=>{e.currentTarget.src='/vite.svg'}} />
+                  <img src={getMainImageForProject(project)} alt={project.title} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300"  />
                   <div className="absolute inset-0 bg-black/20"></div>
                 </div>
                 <div className="p-4 sm:p-6">
@@ -1069,25 +1059,25 @@ function App() {
                     <div className="p-2 bg-purple-500/20 rounded-lg group-hover:bg-purple-500/30 transition-colors duration-300">
                       <FaEnvelope className="text-purple-400 sm:w-5 sm:h-5" size={18} />
                     </div>
-                    <a href="mailto:saifaslam155@gmail.com" className="text-gray-300 group-hover:text-white transition-colors text-sm sm:text-base hover:underline">saifaslam155@gmail.com</a>
+                    <a href={`mailto:${import.meta.env.VITE_CONTACT_EMAIL}`} className="text-gray-300 group-hover:text-white transition-colors text-sm sm:text-base hover:underline">{import.meta.env.VITE_CONTACT_EMAIL}</a>
                   </div>
                   <div className="flex items-center gap-3 group">
                     <div className="p-2 bg-blue-500/20 rounded-lg group-hover:bg-blue-500/30 transition-colors duration-300">
                       <FaLinkedin className="text-blue-400 sm:w-5 sm:h-5" size={18} />
                     </div>
-                    <a href="https://www.linkedin.com/in/saif-rehman-432383183/" target="_blank" rel="noopener noreferrer" className="text-gray-300 group-hover:text-white transition-colors text-sm sm:text-base hover:underline">LinkedIn Profile</a>
+                    <a href={import.meta.env.VITE_LINKEDIN_URL} target="_blank" rel="noopener noreferrer" className="text-gray-300 group-hover:text-white transition-colors text-sm sm:text-base hover:underline">LinkedIn Profile</a>
                   </div>
                   <div className="flex items-center gap-3 group">
                     <div className="p-2 bg-gray-500/20 rounded-lg group-hover:bg-gray-500/30 transition-colors duration-300">
                       <FaGithub className="text-gray-400 sm:w-5 sm:h-5" size={18} />
                     </div>
-                    <a href="https://github.com/saifaslam246" target="_blank" rel="noopener noreferrer" className="text-gray-300 group-hover:text-white transition-colors text-sm sm:text-base hover:underline">GitHub Profile</a>
+                    <a href={import.meta.env.VITE_GITHUB_URL} target="_blank" rel="noopener noreferrer" className="text-gray-300 group-hover:text-white transition-colors text-sm sm:text-base hover:underline">GitHub Profile</a>
                   </div>
                   <div className="flex items-center gap-3 group">
                     <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors duration-300">
                       <UpworkIcon />
                     </div>
-                    <a href="https://www.upwork.com/freelancers/~01b2af3f031ecd2a5b" target="_blank" rel="noopener noreferrer" className="text-gray-300 group-hover:text-white transition-colors text-sm sm:text-base hover:underline">Upwork Profile</a>
+                    <a href={import.meta.env.VITE_UPWORK_URL} target="_blank" rel="noopener noreferrer" className="text-gray-300 group-hover:text-white transition-colors text-sm sm:text-base hover:underline">Upwork Profile</a>
                   </div>
                 </div>
               </div>
@@ -1107,70 +1097,154 @@ function App() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <motion.input
-                type="text"
-                placeholder="Your Name"
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm transition-all duration-300 text-sm sm:text-base"
-                whileFocus={{ scale: 1.02, borderColor: "rgba(139, 92, 246, 0.5)" }}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-              />
-              <motion.input
-                type="email"
-                placeholder="Your Email"
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm transition-all duration-300 text-sm sm:text-base"
-                whileFocus={{ scale: 1.02, borderColor: "rgba(139, 92, 246, 0.5)" }}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-              />
-              <motion.textarea
-                placeholder="Your Message"
-                rows="4"
-                className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent backdrop-blur-sm transition-all duration-300 resize-none text-sm sm:text-base"
-                whileFocus={{ scale: 1.02, borderColor: "rgba(139, 92, 246, 0.5)" }}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-              />
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Name Field */}
+              <div className="space-y-1">
+                <motion.input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  placeholder="Your Name"
+                  className={`w-full px-4 py-3 rounded-lg bg-white/5 border text-white placeholder-gray-400 focus:ring-2 focus:border-transparent backdrop-blur-sm transition-all duration-300 text-sm sm:text-base ${
+                    errors.name && touched.name
+                      ? 'border-red-500 focus:ring-red-500/50'
+                      : 'border-white/10 focus:ring-purple-500/50'
+                  }`}
+                  whileFocus={{ scale: 1.02 }}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 }}
+                />
+                {errors.name && touched.name && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 text-red-400 text-xs"
+                  >
+                    <span className="text-red-500">⚠</span>
+                    {errors.name}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Email Field */}
+              <div className="space-y-1">
+                <motion.input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  placeholder="Your Email"
+                  className={`w-full px-4 py-3 rounded-lg bg-white/5 border text-white placeholder-gray-400 focus:ring-2 focus:border-transparent backdrop-blur-sm transition-all duration-300 text-sm sm:text-base ${
+                    errors.email && touched.email
+                      ? 'border-red-500 focus:ring-red-500/50'
+                      : 'border-white/10 focus:ring-purple-500/50'
+                  }`}
+                  whileFocus={{ scale: 1.02 }}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 }}
+                />
+                {errors.email && touched.email && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 text-red-400 text-xs"
+                  >
+                    <span className="text-red-500">⚠</span>
+                    {errors.email}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Message Field */}
+              <div className="space-y-1">
+                <motion.textarea
+                  name="message"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  placeholder="Your Message"
+                  rows="4"
+                  className={`w-full px-4 py-3 rounded-lg bg-white/5 border text-white placeholder-gray-400 focus:ring-2 focus:border-transparent backdrop-blur-sm transition-all duration-300 resize-none text-sm sm:text-base ${
+                    errors.message && touched.message
+                      ? 'border-red-500 focus:ring-red-500/50'
+                      : 'border-white/10 focus:ring-purple-500/50'
+                  }`}
+                  whileFocus={{ scale: 1.02 }}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3 }}
+                />
+                {errors.message && touched.message && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 text-red-400 text-xs"
+                  >
+                    <span className="text-red-500">⚠</span>
+                    {errors.message}
+                  </motion.div>
+                )}
+              </div>
+              
+              {/* Status Messages */}
+              {submitStatus === 'success' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 text-sm"
+                >
+                  ✅ Message sent successfully! I'll get back to you soon.
+                  {countdown > 0 && (
+                    <span className="block mt-1 text-xs opacity-75">
+                      This message will disappear in {countdown} second{countdown !== 1 ? 's' : ''}...
+                    </span>
+                  )}
+                </motion.div>
+              )}
+              
+              {submitStatus === 'error' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 text-sm"
+                >
+                  ❌ Failed to send message. Please try again or contact me directly at {import.meta.env.VITE_CONTACT_EMAIL}
+                </motion.div>
+              )}
+              
               <motion.button 
-                className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base"
-                whileHover={{ 
+                type="submit"
+                disabled={isSubmitting || (Object.keys(errors).some(key => errors[key] && touched[key]))}
+                className={`w-full px-6 py-3 font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base ${
+                  isSubmitting || (Object.keys(errors).some(key => errors[key] && touched[key]))
+                    ? 'bg-gray-600 text-gray-300 cursor-not-allowed' 
+                    : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:shadow-xl'
+                }`}
+                whileHover={!isSubmitting && !Object.keys(errors).some(key => errors[key] && touched[key]) ? { 
                   scale: 1.05,
                   boxShadow: "0 20px 40px rgba(139, 92, 246, 0.3)"
-                }}
-                whileTap={{ scale: 0.95 }}
+                } : {}}
+                whileTap={!isSubmitting && !Object.keys(errors).some(key => errors[key] && touched[key]) ? { scale: 0.95 } : {}}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <motion.span
-                  animate={{ x: [0, 5, 0] }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  Send Message
-                </motion.span>
-                <motion.div
-                  animate={{ 
-                    rotate: [0, 360],
-                    scale: [1, 1.2, 1]
-                  }}
-                  transition={{ 
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                >
-                  <FaArrowRight />
-                </motion.div>
+                <span>
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
+                </span>
+                {!isSubmitting && (
+                  <div>
+                    <FaArrowRight />
+                  </div>
+                )}
               </motion.button>
-            </div>
+            </form>
           </motion.div>
         </div>
       </section>
