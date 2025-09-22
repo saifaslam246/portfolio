@@ -60,8 +60,8 @@ const SRLogoMark = ({ size = 24 }) => (
 )
 
 // Gather all images from assets (Vite)
-const ASSET_IMAGES = import.meta.glob('/src/assets/**/*.{png,jpg,jpeg,webp,gif}', { eager: true, as: 'url' })
-const ASSET_VIDEOS = import.meta.glob('/src/assets/**/*.{mp4,webm,mov}', { eager: true, as: 'url' })
+const ASSET_IMAGES = import.meta.glob('/src/assets/**/*.{png,jpg,jpeg,webp,gif}', { eager: true, query: '?url', import: 'default' })
+const ASSET_VIDEOS = import.meta.glob('/src/assets/**/*.{mp4,webm,mov}', { eager: true, query: '?url', import: 'default' })
 const normalizePrefixes = (p) => (Array.isArray(p) ? p.filter(Boolean) : [p].filter(Boolean))
 const buildGallery = (prefixOrPrefixes) => {
   const prefixes = normalizePrefixes(prefixOrPrefixes)
@@ -442,7 +442,7 @@ function App() {
                     console.log('CV download clicked');
                     try {
                       const link = document.createElement('a');
-                      link.href = `/Saif_ur_Rehman_CV.pdf?t=${Date.now()}`;
+                      link.href = `${import.meta.env.BASE_URL}Saif_ur_Rehman_CV.pdf?t=${Date.now()}`;
                       link.download = 'Saif_ur_Rehman_CV.pdf';
                       link.target = '_blank';
                       link.rel = 'noopener noreferrer';
@@ -453,7 +453,7 @@ function App() {
                     } catch (error) {
                       console.error('CV download error:', error);
                       // Fallback: open in new tab
-                      window.open('/Saif_ur_Rehman_CV.pdf', '_blank');
+                      window.open(`${import.meta.env.BASE_URL}Saif_ur_Rehman_CV.pdf`, '_blank');
                     }
                   }}
                   className="group relative px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 overflow-hidden text-sm sm:text-base"
@@ -864,42 +864,42 @@ function App() {
                 title: "Atomix – 3PL Fulfillment Platform",
                 description: "Atomix is a modern third‑party logistics (3PL) platform that streamlines order fulfillment, reduces shipping costs, and scales globally. It delivers real‑time order tracking, AI‑powered carrier selection, 2‑day nationwide delivery, Amazon FBA/FBM support, and custom packaging from one easy dashboard. I contributed to feature development and optimization, integrated Shopify/Amazon/WooCommerce, and enhanced shipping automation for faster, more efficient deliveries.",
                 tech: ["React", "NestJS", "Shopify", "Amazon", "WooCommerce", "Automation"],
-                image: ASSET_IMAGES['/src/assets/atomix-inventory.png'] || '/atomix-inventory.png',
+                image: ASSET_IMAGES['/src/assets/atomix/image_original.png'],
                 galleryPrefix: 'atomix'
               },
               {
                 title: "EquipX – Equipment Marketplace",
                 description: "equipX is a full‑featured heavy equipment marketplace and asset management platform. It enables users to list, buy, sell, finance, and manage machinery like excavators, trailers, and skid steers. I developed the searchable listing system, implemented financing and logistics modules, and built a real‑time chat feature with group messaging. The platform connects local buyers and sellers, streamlines transactions, improves communication, and supports secure, community‑driven equipment exchanges.",
                 tech: ["Angular", "Node.js", "MongoDB", "Realtime Chat"],
-                image: ASSET_IMAGES['/src/assets/equipx/cover.png'] || '/project-2.jpg',
+                image: ASSET_IMAGES['/src/assets/equipx/cover.png'] || ASSET_IMAGES['/src/assets/equipX/image_original.png'],
                 galleryPrefix: 'equipx'
               },
               {
                 title: "SandSeekers – Real Estate Platform",
                 description: "Led the development of a complete real estate platform for Dubai, allowing users to buy, rent, or explore residential and commercial properties. Built a custom CRM to manage listings, leads, and real-time property data from Bayut, Dubizzle, and Property Finder. Users can book property demos and view the latest projects. I handled client communication, gathered requirements, and managed the entire development team.",
                 tech: ["Next.js", "Node.js", "MongoDB", "CRM", "Integrations"],
-                image: ASSET_IMAGES['/src/assets/sandseerks/cover.png'] || ASSET_IMAGES['/src/assets/sandseekers/cover.png'] || '/project-3.jpg',
+                image: ASSET_IMAGES['/src/assets/sandseerks/cover.png'] || ASSET_IMAGES['/src/assets/sandseekers/image_original.png'],
                 galleryPrefixes: ['sandseerks', 'sandseekers']
               },
               {
                 title: "99DPF – DPF Cleaning Service Platform",
                 description: "99DPF is a digital platform that helps users schedule diesel particulate filter (DPF) cleanings, track orders, communicate with service partners, and manage bookings with a 30-day guarantee. It supports both customers and partners with real-time chat, push notifications, image uploads, and order status updates—accessible via web and mobile apps.",
                 tech: ["React", "React Native", "Node.js", "MongoDB", "Realtime Chat", "Push Notifications"],
-                image: ASSET_IMAGES['/src/assets/99dpf/cover.png'] || '/project-4.jpg',
+                image: ASSET_IMAGES['/src/assets/99dpf/image_original.png'],
                 galleryPrefix: '99dpf'
               },
               {
                 title: "GGamer – Gaming, News & Streaming Platform (UI)",
                 description: "GGamer is a responsive web platform for live gaming competitions, eSports news, and game streaming. I handled complete frontend UI development using modern technologies. The design is fast and tailored for gamers, including real‑time match updates, player stats, trending news, and embedded streams.",
                 tech: ["React", "Next.js", "Tailwind CSS", "Framer Motion", "Streaming"],
-                image: ASSET_IMAGES['/src/assets/gGamer/cover.png'] || ASSET_IMAGES['/src/assets/ggamer/cover.png'] || '/project-5.jpg',
+                image: ASSET_IMAGES['/src/assets/gGamer/image_original.png'] || ASSET_IMAGES['/src/assets/ggamer/image_original.png'],
                 galleryPrefixes: ['ggamer', 'gGamer']
               },
               {
                 title: "CorporateMerch.com – AI-Powered Merchandise Platform",
                 description: "CorporateMerch.com is a platform that helps businesses easily design and order branded merchandise like t-shirts, mugs, tech items, and more. It uses AI to create custom designs in seconds, making the process fast and simple. Companies can use it to send gifts to clients, employees, or partners. The site also connects with tools like CRM systems to automate sending gifts. It's great for corporate gifting, event giveaways, or boosting brand awareness. Overall, it makes it easy for any company to manage and send custom swag.",
                 tech: ["Next.js", "Tailwind CSS", "AI Integration", "CRM Systems", "E-commerce"],
-                image: ASSET_IMAGES['/src/assets/corporate_merch/Pasted image.png'] || '/project-6.jpg',
+                image: ASSET_IMAGES['/src/assets/corporate_merch/Pasted image.png'],
                 galleryPrefix: 'corporate_merch'
               }
             ].map((project, index) => (
@@ -1200,11 +1200,6 @@ function App() {
                   className="p-3 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 text-sm"
                 >
                   ✅ Message sent successfully! I'll get back to you soon.
-                  {countdown > 0 && (
-                    <span className="block mt-1 text-xs opacity-75">
-                      This message will disappear in {countdown} second{countdown !== 1 ? 's' : ''}...
-                    </span>
-                  )}
                 </motion.div>
               )}
               
