@@ -1,16 +1,16 @@
 {
   "homepage": "https://saifaslam246.github.io/portfolio",
-  "name": "saif-portfolio",
+  "name": "saif portfolio website",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist -f"
-  },
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview",
+  "predeploy": "npm run build",
+  "deploy": "gh-pages -d dist -f"
+},
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@tailwindcss/typography": "^0.5.16",

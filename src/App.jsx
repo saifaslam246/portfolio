@@ -571,9 +571,9 @@ function App() {
                 <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
                   {stat.number}
                 </div>
-                <div className="text-gray-300 text-xs sm:text-sm mb-2">{stat.label}</div>
-                <div className="mt-2 text-purple-400">
-                  <stat.icon size={16} className="sm:w-5 sm:h-5" />
+                <div className="flex items-center justify-center gap-2 text-gray-300 text-xs sm:text-sm">
+                  <stat.icon size={16} className="text-purple-400 sm:w-4 sm:h-4" />
+                  <span>{stat.label}</span>
                 </div>
               </motion.div>
             ))}
@@ -1051,7 +1051,6 @@ function App() {
             <div className="space-y-6">
               <div className="p-4 sm:p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300">
                 <h3 className="text-lg sm:text-xl font-semibold text-white mb-6 flex items-center gap-2">
-                  <FaHeart className="text-purple-400" />
                   Get In Touch
                 </h3>
                 <div className="space-y-4">
@@ -1248,7 +1247,7 @@ function App() {
       <footer className="py-8 px-4 border-t border-white/10">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-gray-400 text-sm sm:text-base">
-            © 2024 Saif Rehman. Crafted with <FaLightbulb className="inline text-purple-400" /> using React & Tailwind CSS.
+          © 2024 Saif Rehman. Turning ideas <FaLightbulb className="inline text-purple-400" /> into impactful web solutions.
           </p>
         </div>
       </footer>
