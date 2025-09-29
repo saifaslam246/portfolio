@@ -158,10 +158,19 @@ function App() {
 
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' })
+    const performScroll = () => {
+      if (!element) return
+      const y = element.getBoundingClientRect().top + window.pageYOffset - 70 // account for fixed nav
+      window.scrollTo({ top: y, behavior: 'smooth' })
     }
-    setIsMenuOpen(false)
+
+    // If mobile menu is open, close it first then scroll after animation
+    if (isMenuOpen) {
+      setIsMenuOpen(false)
+      setTimeout(performScroll, 300)
+    } else {
+      performScroll()
+    }
   }
 
   // Validation functions
