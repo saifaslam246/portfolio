@@ -831,10 +831,12 @@ function App() {
                 viewport={{ once: true }}
                 className="p-4 sm:p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10"
               >
-                <div className={`text-xl sm:text-2xl mb-4 ${section.color}`}>
-                  <section.icon />
+                <div className="mb-4 flex items-center gap-2">
+                  <span className={`text-xl sm:text-2xl ${section.color} flex items-center`}>
+                    <section.icon />
+                  </span>
+                  <h3 className="text-lg sm:text-xl font-semibold text-white m-0 leading-none">{section.title}</h3>
                 </div>
-                <h3 className="text-lg sm:text-xl font-semibold text-white mb-4">{section.title}</h3>
                 <div className="space-y-2">
                   {section.items.map((item, itemIndex) => (
                     <div key={itemIndex} className="text-gray-300 text-xs sm:text-sm flex items-center gap-2">
